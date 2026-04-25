@@ -10,62 +10,131 @@
 //need println and tostring for outputting result
 // use parameter where java TMSimulator {file0.txt}
 package tm;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+import java.lang.StringBuilder;
 
+/**
+ * Simulates a Turing Machine
+ * @author Benny Ernst, Holden Weber
+ */
 public class TMSimulator {
-    public static void main(String[] args) {
-        //TODO:
+    public static void main(String[] args) throws FileNotFoundException {
+        if (args.length != 1) {
+            printUsage();
+            return;
+        }
+
+        TMSimulator simulator = new TMSimulator();
+        simulator.loadMachine(args[0]);
+        simulator.run();
+        System.out.println(simulator);
     }
 
-    /** Set of states */
-    private Object q;
-    /** Set of input alphabet */
-    private Object sigma;
+    /**
+     * prints usage message
+     */
+    private static void printUsage() {
+        System.out.println("Usage: java TMSimulator <input_file>");
+    }
+
+    /** Number of states */
+    private int numStates;
+    /** Number of symbols */
+    private int numSymbols;
     /** Transitions */
-    private Object delta;
-    /** Set of tape alphabet */
-    private Object gamma;
-    /** Starting state */
-    private Object q0;
-    /** End state */
-    private Object qh;
+    private Transition[][] transitions;
+    /** Symbols on the tape  */
+    private Map<Long, Integer> tape = new HashMap<>();
+    /** Position of the tape head */
+    private long headPos = 0;
+    /** Current state the TM is in */
+    private int currState = 0;
+    /** Tracker for farmost left position on the tape */
+    private long minVisited = 0;
+    /** Tracker for farmost right position on the tape */
+    private long maxVisited = 0;
 
-    public TMSimulator() {
-        this.q = new Object();
-        this.sigma = new Object();
-        this.delta = new Object();
-        this.gamma = new Object();
+    /**
+     * loads the Turing Machine from given input file
+     * @param filename - input file
+     * @throws FileNotFoundException - if file is not found
+     */
+    public void loadMachine(String filename) throws FileNotFoundException {
+        File file = new File(filename);
+        String line;
+        try (Scanner scr = new Scanner(file)){
+            this.numStates = Integer.parseInt(scr.nextLine().trim());
+            this.numSymbols = Integer.parseInt(scr.nextLine().trim());
+            this.transitions = new Transition[numStates - 1][numSymbols + 1];
 
+            for (int i = 0; i < numStates - 1; i++) {
+                for (int j = 0; j < numSymbols + 1; j++) {
+                    line = scr.nextLine();
+                    line = line.trim();
+                    String[] tokens = line.split(",");
+
+                    int nextState = Integer.parseInt(tokens[0]);
+                    int write = Integer.parseInt(tokens[1]);
+                    char move = tokens[2].charAt(0);
+
+
+                    this.transitions[i][j] = new Transition(nextState, write, move);
+                }
+            }
+
+            if (scr.hasNextLine()) {
+                line = scr.nextLine();
+                if (line != null && !line.trim().isEmpty()) {
+                    String input = line.trim();
+                    for (int i = 0; i < input.length(); i++) {
+                        int val = Character.getNumericValue(input.charAt(i));
+                        tape.put((long)i, val);
+                        maxVisited = Math.max(maxVisited, i);
+                    }
+                }
+            }
+        }
+        catch (FileNotFoundException e) {
+            System.out.println("File not found");
+        }
     }
 
-    public void loadMachine() {
-        //TODO
-        //read line 1: number of states
-        //read line 2: number of symbols
-        // read other gamma * (Q - 1), or (sigma + 1) * (Q - 1), lines, call addTransitions
-    }
+    /**
+     * Runs the simulated Turing Machine
+     */
+    public void run() {
+        int acceptedState = numStates - 1;
 
-    public void addState(int states) {
-        //TODO
-        // do for loop for number states starting from 0 to n - 1, add to set
-    }
+        while (currState != acceptedState) {
 
-    public void addTransition() {
-        //TODO
-    }
+            int currSym = tape.getOrDefault(headPos, 0);
+            Transition t = transitions[currState][currSym];
 
-    public void addSigma(int symbols) {
-        //TODO
-        // do for loop for number of symbols starting from 1 to n, add to set
-    }
+            tape.put(headPos, t.write);
+            currState = t.nextState;
+            if (t.move == 'R') {
+                headPos++;
+            } else if (t.move == 'L') {
+                headPos--;
+            } else {
+                throw new IllegalStateException("Invalid move '" + t.move + "'");
+            }
 
-    public void addGamma() {
-        //TODO
-        // add 0 to set for blank
-        // call addSigma to add remaining to set
+            minVisited = Math.min(minVisited, headPos);
+            maxVisited = Math.max(maxVisited, headPos);
+        }
     }
 
     @Override
     public String toString() {
-        //TODO
+        StringBuilder sb = new StringBuilder();
+        for (long i = minVisited; i <= maxVisited; i++) {
+            sb.append(tape.get(i));
+        }
+        return sb.toString();
     }
 }
