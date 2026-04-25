@@ -57,12 +57,6 @@ We think that this program could be improved with better applied iteration
 techniques to the TMSimulator. 
 
 ## TESTING:
-How did you test your program to be sure it works and meets all of the
-requirements? What was the testing strategy? What kinds of tests were
-run?
-Can your program handle bad input? Is your program idiot-proof? How do
-you
-know? What are the known issues / bugs remaining in your program?
 
 We performed a ton of smoke testing, testing many invalid inputs and ensuring that the load function properly stores the correct values. The program handles bad input well. It will throw errors if there are too many or not enough transition entries based off the given number of states and symbols. The system can also detect if a symbol or state should not exist as well as catching bad movement (anything but 'R' or 'L').
 
